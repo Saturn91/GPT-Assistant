@@ -1,5 +1,16 @@
 import requests
 import json
+import re
+import importlib
+
+# plugins
+from sendEmail import run as sendEmailRun
+from doCommit import run as commitRun
+
+pluginDict = {
+    "sendEmail": sendEmailRun,
+    "doCommit": commitRun
+}
 
 with open("API_KEY.json", "r") as api_key_file:
     api_key_data = json.load(api_key_file)
@@ -66,10 +77,12 @@ while i > 0:
 
     if 'choices' in response and response['choices']:
         content = response['choices'][0]['message']['content']
-
         # Check if the message starts with [[CMD!]]
-        if content.startswith("[[CMD!]]"):
-            print("Executing:", content)  # Print the content after "[[CMD!]]"
+        pattern = r'\[\[CMD!\]](.*?)$'
+        match = re.search(pattern, content)
+        if match:
+            parsedPluginData = json.loads(match.group(1))
+            pluginDict[parsedPluginData["plugin"]](parsedPluginData["options"])
             exit()
         else:
             print(content)
